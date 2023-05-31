@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("./db/connection"); //db from MongoDB
 const Users = require("./models/Users"); // Users schema
+const Conversations = require("./models/Conversations"); // Converstaion schema
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 //const { body, validationResult } = require("express-validator");
@@ -95,6 +96,42 @@ app.post("/api/login", async (req, res, next) => {
     );
   } catch (error) {
     console.log(error, "Error");
+  }
+});
+
+app.post("/api/conversation", async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.body;
+    const newCoversation = new Conversations({
+      members: [senderId, receiverId],
+    });
+    await newCoversation.save();
+    res.status(200).send("Conversation created successfully");
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/conversation/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const conversations = await Conversations.find({
+      $or: [{ members: userId }, { members: { $in: [userId] } }],
+    });
+
+    const conversationUserData = await Promise.all(
+      conversations.map(async (conversation) => {
+        const receiverId = conversation.members.find((member) => {
+          return member !== userId;
+        });
+        return await Users.findOne({ _id: receiverId });
+      })
+    );
+    
+    res.status(200).json(conversationUserData);
+  } catch (error) {
+    console.log(error);
   }
 });
 
