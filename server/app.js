@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("./db/connection"); //db from MongoDB
 const Users = require("./models/Users"); // Users schema
 const Conversations = require("./models/Conversations"); // Converstaion schema
+const Messages = require("./models/Messages"); // Converstaion schema
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 //const { body, validationResult } = require("express-validator");
@@ -125,13 +126,39 @@ app.get("/api/conversation/:userId", async (req, res) => {
         const receiverId = conversation.members.find((member) => {
           return member !== userId;
         });
-        return await Users.findOne({ _id: receiverId });
+        const user = await Users.findById(receiverId);
+        return {
+          user: { email: user.email, fullName: user.fullName },
+          conversationId: conversation._id,
+        };
       })
     );
-    
+
     res.status(200).json(conversationUserData);
   } catch (error) {
     console.log(error);
+  }
+});
+
+app.post("/api/message", async (req, res) => {
+  try {
+    const { conversationId, senderId, message } = req.body;
+    const newMessage = new Messages({ conversationId, senderId, message });
+    await newMessage.save();
+    res.status(200).send("Message sent successfully");
+  } catch (error) {
+    console.log("Error", error);
+  }
+});
+
+app.get("/api/message/:conversationId",async (req, res) => {
+  try {
+    const conversationId = req.params.conversationId;
+    const message = await Messages.find({ conversationId });
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error", error);
   }
 });
 
