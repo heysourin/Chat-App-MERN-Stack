@@ -81,7 +81,7 @@ app.post("/api/login", async (req, res, next) => {
     jwt.sign(
       payload,
       JWT_SECRET_KEY,
-      { expiresIn: 84600 },
+      { expiresIn: 86400 },
       async (err, token) => {
         user.token = token;
         await user.save();
@@ -118,7 +118,7 @@ app.get("/api/conversation/:userId", async (req, res) => {
     const userId = req.params.userId;
 
     const conversations = await Conversations.find({
-      $or: [{ members: userId }, { members: { $in: [userId] } }],
+      members: { $in: [userId] },
     });
 
     const conversationUserData = await Promise.all(
@@ -151,7 +151,7 @@ app.post("/api/message", async (req, res) => {
   }
 });
 
-app.get("/api/message/:conversationId",async (req, res) => {
+app.get("/api/message/:conversationId", async (req, res) => {
   try {
     const conversationId = req.params.conversationId;
     const message = await Messages.find({ conversationId });

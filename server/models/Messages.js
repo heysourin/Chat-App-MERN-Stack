@@ -5,7 +5,7 @@ const messageSchema = new Schema({
   conversationId: {
     type: String,
   },
-  sender: {
+  senderId: {
     type: String,
   },
   message: {
