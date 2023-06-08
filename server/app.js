@@ -5,6 +5,7 @@ const Conversations = require("./models/Conversations"); // Converstaion schema
 const Messages = require("./models/Messages"); // Converstaion schema
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 //const { body, validationResult } = require("express-validator");
 
 const app = express();
@@ -17,6 +18,7 @@ const router = express.Router();
 db();
 
 //@note These two are for receiving data from frontend, correct way
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -113,22 +115,26 @@ app.post("/api/conversation", async (req, res) => {
   }
 });
 
-app.get("/api/conversation/:userId", async (req, res) => {
+app.get("/api/conversations/:userId", async (req, res) => {
   try {
-    const userId = req.params.userId; //we are taking the data from URL
-
+    const userId = req.params.userId;
     const conversations = await Conversations.find({
       members: { $in: [userId] },
     });
 
+    console.log(conversations);
     const conversationUserData = await Promise.all(
       conversations.map(async (conversation) => {
-        const receiverId = conversation.members.find((member) => {
-          return member !== userId;
-        });
+        const receiverId = conversation.members.find(
+          (member) => member !== userId
+        );
         const user = await Users.findById(receiverId);
         return {
-          user: { email: user.email, fullName: user.fullName },
+          user: {
+            receiverId: user._id,
+            email: user.email,
+            fullName: user.fullName,
+          },
           conversationId: conversation._id,
         };
       })
@@ -136,7 +142,7 @@ app.get("/api/conversation/:userId", async (req, res) => {
 
     res.status(200).json(conversationUserData);
   } catch (error) {
-    console.log(error);
+    console.log(error, "Error");
   }
 });
 
@@ -145,8 +151,11 @@ app.post("/api/message", async (req, res) => {
     const { conversationId, senderId, message, receiverId = "" } = req.body;
     if (!senderId || !message)
       return res.status(400).send("please fill the required fields");
-    if (!conversationId && receiverId) {
-      const newCoversation = new Conversations({ members: [senderId] });
+
+    if (conversationId === "new" && receiverId) {
+      const newCoversation = new Conversations({
+        members: [senderId, receiverId],
+      });
       await newCoversation.save();
       const newMessage = new Messages({
         conversationId: newCoversation._id,
@@ -156,8 +165,8 @@ app.post("/api/message", async (req, res) => {
 
       await newMessage.save();
       return res.status(200).send("Message sent successfully");
-    } else {
-      return res.status(400).send("please fill the required fields");
+    } else if (!conversationId && !receiverId) {
+      return res.status(400).send("please fill the required fields2");
     }
 
     const newMessage = new Messages({ conversationId, senderId, message });

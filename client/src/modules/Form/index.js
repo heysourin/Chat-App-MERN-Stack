@@ -3,34 +3,56 @@ import Input from "../../components/Input";
 import Button from "../../components/Button";
 import { useNavigate } from "react-router-dom";
 
-const Form = ({ isSingInPage = true }) => {
-  const navigate = useNavigate();
-
+const Form = ({ isSignInPage = false }) => {
   const [data, setData] = useState({
-    ...(!isSingInPage && {
+    ...(!isSignInPage && {
       fullName: "",
     }),
     email: "",
     password: "",
   });
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
-    console.log("Data:", data);
+    console.log("data :>> ", data);
     e.preventDefault();
+    const res = await fetch(
+      `http://localhost:5000/api/${isSignInPage ? "login" : "register"}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (res.status === 400) {
+      alert("Invalid credentials");
+    } else {
+      const resData = await res.json();
+      if (resData.token) {
+        localStorage.setItem("user:token", resData.token);
+        localStorage.setItem("user:detail", JSON.stringify(resData.user));
+        navigate("/");
+      }
+    }
   };
+
   return (
     <div className="bg-white w-[400px] h-[600px] shadow-lg flex flex-col justify-center items-center mx-auto">
       <div className="text-4xl font-bold">
-        Welcome {isSingInPage && "Back"}{" "}
+        Welcome {isSignInPage && "Back"}{" "}
       </div>
       <div className="text-xl font-light mb-14">
-        {isSingInPage ? "Sign in to explore" : "Sign up"}
+        {isSignInPage ? "Sign in to explore" : "Sign up"}
       </div>
       <form
         action=""
-        onSubmit={(e) => handleSubmit}
+        onSubmit={(e) => handleSubmit(e)}
         className="flex flex-col items-center w-full"
       >
-        {!isSingInPage && (
+        {!isSignInPage && (
           <Input
             label="Full Name"
             name="name"
@@ -60,21 +82,21 @@ const Form = ({ isSingInPage = true }) => {
           onChange={(e) => setData({ ...data, password: e.target.value })}
         />
         <Button
-          label={isSingInPage ? "Sign In" : "Sign Up"}
+          label={isSignInPage ? "Sign In" : "Sign Up"}
           className="w-1/2 mb-2"
           type="submit"
         />
       </form>
 
       <div>
-        {isSingInPage ? "Not a member? " : "Already a member? "}
+        {isSignInPage ? "Not a member? " : "Already a member? "}
         <span
           className="text-primary cursor-pointer"
           onClick={() =>
-            navigate(`/users/${isSingInPage ? "sign_up" : "sign_in"}`)
+            navigate(`/users/${isSignInPage ? "sign_up" : "sign_in"}`)
           }
         >
-          Sign {isSingInPage ? "Up" : "In"}
+          Sign {isSignInPage ? "Up" : "In"}
         </span>{" "}
       </div>
     </div>

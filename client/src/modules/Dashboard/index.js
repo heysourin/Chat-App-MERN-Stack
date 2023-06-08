@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Input from "../../components/Input";
 
 import profile2 from "../../assets/profile2.svg";
 import Button from "../../components/Button";
 const Dashboard = () => {
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user:detail"))
+  );
+  console.log("user->", user);
+
+  const [conversations, setConversations] = useState([]);
+
   const contacts = [
     { name: "John", status: "Online", img: profile2 },
     { name: "Mary", status: "Online", img: profile2 },
@@ -12,6 +19,26 @@ const Dashboard = () => {
     { name: "Larry", status: "Online", img: profile2 },
     { name: "Max", status: "Online", img: profile2 },
   ];
+
+  const fetchConversations = async () => {
+    const loggedInUser = JSON.parse(localStorage.getItem("user:detail"));
+    const res = await fetch(
+      `http://localhost:5000/api/conversations/${loggedInUser?.id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const resData = await res.json();
+    setConversations(resData);
+    console.log("Conversation array", conversations);
+  };
+
+  useEffect(() => {
+    fetchConversations();
+  }, []);
   return (
     <div className="w-screen flex bg-white">
       {/* LEFT BAR STARTS */}
@@ -19,7 +46,7 @@ const Dashboard = () => {
         <div className="flex justify-center items-center mt-2">
           <img src={profile2} alt="" height={50} width={50} />
           <div className="m-3">
-            <h3 className="text-2xl font-semibold">Tutorials Dev</h3>
+            <h3 className="text-2xl font-semibold">{user?.fullName}</h3>
             <p className="text-lg font-light">My Ac</p>
           </div>
         </div>
@@ -27,15 +54,18 @@ const Dashboard = () => {
         <div className="ml-2">
           <div className="">Messages</div>
           <div>
-            {contacts.map((el, i) => {
-              const key = el.id || i;
+            {conversations.map(({ conversationid, user }, i) => {
               return (
-                <div key={key}>
-                  <div className="flex items-center mt-2">
-                    <img src={el.img} alt="" height={50} width={50} />
-                    <div className="m-3">
-                      <h3 className="text-xl font-semibold">{el.name}</h3>
-                      <p className="text-sm font-light">{el.status}</p>
+                <div className="flex items-center mt-2 " key={i}>
+                  <div className="cursor-pointer flex items-center" >
+                    <div>
+                      <img src={profile2} alt="" height={50} width={50} />
+                    </div>
+                    <div className="ml-6">
+                      <h3 className="text-xl font-semibold">
+                        {user?.fullName}
+                      </h3>
+                      <p className="text-sm font-light">{user?.email}</p>
                     </div>
                   </div>
                 </div>
