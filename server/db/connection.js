@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const dbURI =
-  "mongodb+srv://rylephoenix:ryle123@cluster0.9sy7br8.mongodb.net/ChatApp?retryWrites=true&w=majority";
+  "mongodb+srv://<uname>:<pw>@cluster0.9sy7br8.mongodb.net/ChatApp?retryWrites=true&w=majority";
 
 const db = async () => {
   try {
